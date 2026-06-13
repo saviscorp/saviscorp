@@ -59,8 +59,9 @@ export default function RegisterPage() {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password)
       await updateProfile(user, { displayName: data.name })
-      await createUserDoc(user.uid, data.name, data.email)
       setAuthCookie(user.uid)
+      // Best-effort Firestore write — don't block auth if it fails
+      createUserDoc(user.uid, data.name, data.email).catch(() => {})
       router.push('/')
     } catch (e: unknown) {
       const code = (e as { code?: string }).code
