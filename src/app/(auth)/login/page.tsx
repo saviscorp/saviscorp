@@ -93,7 +93,8 @@ function LoginInner() {
       const cred = await signInWithEmailAndPassword(auth, email, password)
       setAuthCookie(cred.user.uid)
       const path = await getOnboardingRedirect(cred.user.uid)
-      router.push(path)
+      const next = searchParams.get('next')
+      router.push(path === '/' && next ? next : path)
     } catch (err: unknown) {
       const code = (err as { code?: string }).code
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
@@ -111,15 +112,13 @@ function LoginInner() {
       const result = await signInWithPopup(auth, new GoogleAuthProvider())
       setAuthCookie(result.user.uid)
       const path = await getOnboardingRedirect(result.user.uid)
-      router.push(path)
+      const next = searchParams.get('next')
+      router.push(path === '/' && next ? next : path)
     } catch {
       setPasswordError('Google sign-in failed. Please try again.')
       setSubmitting(false)
     }
   }
-
-  // Ignore searchParams — onboarding routing takes precedence over ?next=
-  void searchParams
 
   return (
     <div className="min-h-screen bg-surface-gray flex">

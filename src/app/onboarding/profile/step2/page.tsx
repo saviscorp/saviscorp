@@ -4,8 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, PencilSimple } from 'phosphor-react'
 import ProfileStepLayout from '@/components/onboarding/ProfileStepLayout'
-import { auth } from '@/lib/firebase'
-import { updateOnboardingStep } from '@/lib/onboarding'
+import { auth, db } from '@/lib/firebase'
+import { updateDoc, doc } from 'firebase/firestore'
 
 export default function ProfileStep2() {
   const router = useRouter()
@@ -48,7 +48,13 @@ export default function ProfileStep2() {
   async function advanceToStep3() {
     setSubmitting(true)
     const uid = auth.currentUser?.uid
-    if (uid) await updateOnboardingStep(uid, 3)
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid), {
+        'photo.uploaded': !!previewUrl,
+        'photo.url': '',
+        onboardingStep: 3,
+      }).catch(() => {})
+    }
     router.push('/onboarding/profile/step3')
   }
 

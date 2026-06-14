@@ -13,15 +13,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Unauthenticated users can't access the app
-  if (!uid && (pathname === '/' || pathname.startsWith('/onboarding'))) {
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
+  // Onboarding requires auth — everything else is publicly browsable
+  if (!uid && pathname.startsWith('/onboarding')) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/', '/login', '/register', '/onboarding/:path*'],
+  matcher: ['/login', '/register', '/onboarding/:path*'],
 }

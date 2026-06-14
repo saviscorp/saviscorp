@@ -4,8 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { UploadSimple, CheckCircle } from 'phosphor-react'
 import ProfileStepLayout from '@/components/onboarding/ProfileStepLayout'
-import { auth } from '@/lib/firebase'
-import { updateOnboardingStep } from '@/lib/onboarding'
+import { auth, db } from '@/lib/firebase'
+import { updateDoc, doc } from 'firebase/firestore'
 
 type DocType = 'National ID' | 'Passport' | 'Driving licence'
 
@@ -77,14 +77,27 @@ export default function ProfileStep3() {
   async function handleReview() {
     setSubmitting(true)
     const uid = auth.currentUser?.uid
-    if (uid) await updateOnboardingStep(uid, 4)
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid), {
+        'identity.docType': docType,
+        'identity.frontUploaded': frontUploaded,
+        'identity.backUploaded': backUploaded,
+        'identity.skipped': false,
+        onboardingStep: 4,
+      }).catch(() => {})
+    }
     router.push('/onboarding/profile/step4')
   }
 
   async function handleSkip() {
     setSubmitting(true)
     const uid = auth.currentUser?.uid
-    if (uid) await updateOnboardingStep(uid, 4)
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid), {
+        'identity.skipped': true,
+        onboardingStep: 4,
+      }).catch(() => {})
+    }
     router.push('/')
   }
 

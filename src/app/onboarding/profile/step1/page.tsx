@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ProfileStepLayout from '@/components/onboarding/ProfileStepLayout'
-import { auth } from '@/lib/firebase'
-import { updateOnboardingStep } from '@/lib/onboarding'
+import { auth, db } from '@/lib/firebase'
+import { updateDoc, doc } from 'firebase/firestore'
 
 type Gender = 'Male' | 'Female' | 'Prefer not to say'
 
@@ -57,7 +57,17 @@ export default function ProfileStep1() {
     if (!validate()) return
     setSubmitting(true)
     const uid = auth.currentUser?.uid
-    if (uid) await updateOnboardingStep(uid, 2)
+    if (uid) {
+      const mm = String(months.indexOf(month) + 1).padStart(2, '0')
+      const dd = String(Number(day)).padStart(2, '0')
+      await updateDoc(doc(db, 'users', uid), {
+        'profile.fullName': fullName.trim(),
+        'profile.phone': phone.trim(),
+        'profile.gender': gender,
+        'profile.dob': `${year}-${mm}-${dd}`,
+        onboardingStep: 2,
+      }).catch(() => {})
+    }
     router.push('/onboarding/profile/step2')
   }
 

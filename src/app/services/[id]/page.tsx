@@ -150,7 +150,7 @@ function ReviewerAvatar({ name, colorClass }: { name: string; colorClass: string
 
 export default function ServiceDetailPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const service = MOCK_SERVICE
 
   const [currentImage, setCurrentImage] = useState(0)
@@ -158,6 +158,7 @@ export default function ServiceDetailPage() {
   const [authGateOpen, setAuthGateOpen] = useState(false)
 
   function handleBook() {
+    if (authLoading) return
     if (!user) {
       setAuthGateOpen(true)
     } else {
