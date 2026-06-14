@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   MagnifyingGlass,
   MapPin,
@@ -10,12 +11,12 @@ import {
   List,
   X,
   House,
-  Briefcase,
   BookOpen,
   User,
   ArrowRight,
 } from 'phosphor-react'
 import ServiceCard, { Service } from '@/components/services/ServiceCard'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
 
@@ -35,12 +36,6 @@ const MOCK_SERVICES: Service[] = [
 ]
 
 const CATEGORIES = ['All', 'Cleaning', 'Beauty & Wellness', 'Home Repairs', 'Tutoring', 'Transport', 'Catering', 'Security', 'Tech Support']
-
-// ─── Props ────────────────────────────────────────────────────────────────────
-
-interface ServiceListingPageProps {
-  isAuthenticated?: boolean
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -77,7 +72,11 @@ function BottomNav({ activeTab }: { activeTab: string }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function ServiceListingPage({ isAuthenticated = false }: ServiceListingPageProps) {
+export default function ServiceListingPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const isAuthenticated = !!user
+
   const [scrolled, setScrolled] = useState(false)
   const [activeCategory, setActiveCategory] = useState('All')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -136,7 +135,9 @@ export default function ServiceListingPage({ isAuthenticated = false }: ServiceL
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-action rounded-full" />
                 </button>
                 <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center">
-                  <span className="text-[12px] font-semibold text-brand-primary">AW</span>
+                  <span className="text-[12px] font-semibold text-brand-primary">
+                    {user?.displayName?.[0]?.toUpperCase() ?? 'U'}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -179,19 +180,30 @@ export default function ServiceListingPage({ isAuthenticated = false }: ServiceL
                     <span className="absolute top-2 right-2 w-2 h-2 bg-brand-action rounded-full" />
                   </button>
                   <div className="w-9 h-9 rounded-full bg-brand-light flex items-center justify-center cursor-pointer">
-                    <span className="text-[13px] font-semibold text-brand-primary">AW</span>
+                    <span className="text-[13px] font-semibold text-brand-primary">
+                      {user?.displayName?.[0]?.toUpperCase() ?? 'U'}
+                    </span>
                   </div>
                 </>
               ) : (
                 <>
                   <span className="text-[14px] text-secondary hover:text-primary cursor-pointer">How it works</span>
-                  <button className="h-9 px-4 bg-brand-warm text-white text-[14px] font-semibold rounded-[10px] hover:opacity-90 transition-opacity">
+                  <button
+                    onClick={() => router.push('/register?intent=list-service')}
+                    className="h-9 px-4 bg-brand-warm text-white text-[14px] font-semibold rounded-[10px] hover:opacity-90 transition-opacity"
+                  >
                     List a service
                   </button>
-                  <button className="h-9 px-4 border border-brand-primary text-brand-primary text-[14px] font-semibold rounded-[10px] hover:bg-brand-light transition-colors">
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="h-9 px-4 border border-brand-primary text-brand-primary text-[14px] font-semibold rounded-[10px] hover:bg-brand-light transition-colors"
+                  >
                     Sign in
                   </button>
-                  <button className="h-9 px-4 bg-brand-action text-white text-[14px] font-semibold rounded-[10px] hover:bg-brand-action/90 transition-colors">
+                  <button
+                    onClick={() => router.push('/register')}
+                    className="h-9 px-4 bg-brand-action text-white text-[14px] font-semibold rounded-[10px] hover:bg-brand-action/90 transition-colors"
+                  >
                     Join free
                   </button>
                 </>
@@ -230,13 +242,22 @@ export default function ServiceListingPage({ isAuthenticated = false }: ServiceL
               </button>
             </div>
             <div className="p-4 space-y-3">
-              <button className="w-full h-[52px] bg-brand-warm text-white font-semibold text-[15px] rounded-[10px] flex items-center justify-center">
+              <button
+                onClick={() => { setDrawerOpen(false); router.push('/register?intent=list-service') }}
+                className="w-full h-[52px] bg-brand-warm text-white font-semibold text-[15px] rounded-[10px] flex items-center justify-center"
+              >
                 List a service
               </button>
-              <button className="w-full h-[52px] border border-brand-primary text-brand-primary font-semibold text-[15px] rounded-[10px]">
+              <button
+                onClick={() => { setDrawerOpen(false); router.push('/login') }}
+                className="w-full h-[52px] border border-brand-primary text-brand-primary font-semibold text-[15px] rounded-[10px]"
+              >
                 Sign in
               </button>
-              <button className="w-full h-[52px] bg-brand-action text-white font-semibold text-[15px] rounded-[10px]">
+              <button
+                onClick={() => { setDrawerOpen(false); router.push('/register') }}
+                className="w-full h-[52px] bg-brand-action text-white font-semibold text-[15px] rounded-[10px]"
+              >
                 Join free
               </button>
             </div>
@@ -256,7 +277,9 @@ export default function ServiceListingPage({ isAuthenticated = false }: ServiceL
 
         {isAuthenticated && (
           <div className="mt-4 mb-3 bg-brand-light border-l-[3px] border-brand-warm rounded-r-xl px-4 py-3">
-            <p className="text-[15px] font-semibold text-primary">Welcome back, Amina 👋</p>
+            <p className="text-[15px] font-semibold text-primary">
+              Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''} 👋
+            </p>
             <p className="text-[13px] text-secondary mt-0.5">What service are you looking for today?</p>
           </div>
         )}
@@ -301,7 +324,10 @@ export default function ServiceListingPage({ isAuthenticated = false }: ServiceL
       {/* ── Floating "Earn on SAVIS" pill ──────────────────────────────────── */}
       {!isAuthenticated && (
         <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
-          <button className="pointer-events-auto flex items-center gap-2 bg-brand-primary text-white text-[14px] font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-brand-dark transition-colors">
+          <button
+            onClick={() => router.push('/register?intent=list-service')}
+            className="pointer-events-auto flex items-center gap-2 bg-brand-primary text-white text-[14px] font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-brand-dark transition-colors"
+          >
             Earn on SAVIS — List a service
             <ArrowRight size={16} />
           </button>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   CaretLeft,
   ShareNetwork,
@@ -12,13 +13,15 @@ import {
   Clock,
   NavigationArrow,
   CaretRight,
-  Timer,
   ShieldCheck,
   ArrowCounterClockwise,
   CaretDown,
   CaretUp,
 } from 'phosphor-react'
-import AuthGateSheet from '@/components/ui/AuthGateSheet'
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
+import { useAuth } from '@/lib/hooks/useAuth'
+import AuthGateSheet from '@/components/auth/AuthGateSheet'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,21 +148,30 @@ function ReviewerAvatar({ name, colorClass }: { name: string; colorClass: string
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-interface ServiceDetailPageProps {
-  isAuthenticated?: boolean
-}
-
-export default function ServiceDetailPage({ isAuthenticated = false }: ServiceDetailPageProps) {
+export default function ServiceDetailPage() {
+  const router = useRouter()
+  const { user } = useAuth()
   const service = MOCK_SERVICE
+
   const [currentImage, setCurrentImage] = useState(0)
   const [descExpanded, setDescExpanded] = useState(false)
   const [authGateOpen, setAuthGateOpen] = useState(false)
 
-  const handleBook = () => {
-    if (!isAuthenticated) {
+  function handleBook() {
+    if (!user) {
       setAuthGateOpen(true)
     } else {
-      // Navigate to booking flow
+      router.push(`/booking/${service.id}`)
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider())
+      setAuthGateOpen(false)
+      router.push(`/booking/${service.id}`)
+    } catch {
+      // user dismissed the popup — stay on page
     }
   }
 
@@ -169,8 +181,11 @@ export default function ServiceDetailPage({ isAuthenticated = false }: ServiceDe
       <AuthGateSheet
         isOpen={authGateOpen}
         onClose={() => setAuthGateOpen(false)}
-        serviceName={service.name}
-        servicePrice={service.priceFrom}
+        variant="booking"
+        serviceContext={{ name: service.name, price: service.priceFrom }}
+        onCreateAccount={() => router.push('/register')}
+        onSignIn={() => router.push(`/login?next=/services/${service.id}`)}
+        onGoogleSignIn={handleGoogleSignIn}
       />
 
       <div className="min-h-screen bg-surface-gray">
@@ -324,7 +339,9 @@ export default function ServiceDetailPage({ isAuthenticated = false }: ServiceDe
               <h2 className="text-[17px] font-semibold text-primary mb-3">About the provider</h2>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center shrink-0">
-                  <span className="text-[15px] font-semibold text-brand-primary">AW</span>
+                  <span className="text-[15px] font-semibold text-brand-primary">
+                    {service.provider.name[0]}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

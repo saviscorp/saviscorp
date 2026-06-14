@@ -25,15 +25,27 @@ const config: Config = {
         'border':         '#E8E2E8',
         'primary':        '#1A0A1A',
         'secondary':      '#6B5C6B',
+        'text-primary':   '#1A0A1A',
+        'text-secondary': '#6B5C6B',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         xl: '12px',
         '2xl': '16px',
         '3xl': '20px',
+      },
+      keyframes: {
+        'slide-up': {
+          from: { transform: 'translateY(100%)' },
+          to:   { transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-up': 'slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
       },
     },
   },
