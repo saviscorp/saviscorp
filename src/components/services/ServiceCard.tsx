@@ -1,99 +1,128 @@
 'use client'
 
 import Link from 'next/link'
-import { MapPin, CheckCircle } from 'phosphor-react'
+import { MapPin, Star, ShieldCheck } from 'phosphor-react'
 
-export interface Service {
+export interface ServiceCardProps {
   id: string
   name: string
-  provider: string
+  providerName: string
   location: string
   price: number
-  rating: number
-  reviews: number
+  pricingType: 'fixed' | 'per_hour'
+  rating: number | null
+  reviewCount: number
   verified: boolean
-  category: string
-  imageUrl?: string
+  photoUrl: string | null
+  categoryName: string
+  onClick?: () => void
+  onBook?: () => void
 }
 
-interface ServiceCardProps {
-  service: Service
-}
+export default function ServiceCard({
+  id,
+  name,
+  providerName,
+  location,
+  price,
+  pricingType,
+  rating,
+  reviewCount,
+  verified,
+  photoUrl,
+  categoryName,
+  onClick,
+  onBook,
+}: ServiceCardProps) {
+  const isNew = rating === null && reviewCount === 0
 
-function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => {
-        const filled = rating >= star
-        const partial = !filled && rating >= star - 0.5
-        return (
-          <span key={star} className="relative inline-block w-3.5 h-3.5">
-            <svg viewBox="0 0 14 14" className="w-full h-full text-gray-200" fill="currentColor">
-              <path d="M7 1l1.545 3.13L12 4.635l-2.5 2.435.59 3.44L7 8.885l-3.09 1.625.59-3.44L2 4.635l3.455-.505z" />
-            </svg>
-            <svg
-              viewBox="0 0 14 14"
-              className="absolute inset-0 w-full h-full text-brand-gold"
-              fill="currentColor"
-              style={partial ? { clipPath: 'inset(0 50% 0 0)' } : filled ? {} : { display: 'none' }}
-            >
-              <path d="M7 1l1.545 3.13L12 4.635l-2.5 2.435.59 3.44L7 8.885l-3.09 1.625.59-3.44L2 4.635l3.455-.505z" />
-            </svg>
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
-export default function ServiceCard({ service }: ServiceCardProps) {
-  return (
-    <Link href={`/services/${service.id}`} className="block group">
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden border border-border hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow duration-200">
-        <div className="aspect-video bg-gray-100 overflow-hidden relative">
-          {service.imageUrl ? (
-            <img
-              src={service.imageUrl}
-              alt={service.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-brand-light to-gray-100" />
-          )}
-        </div>
-
-        <div className="p-3">
-          <h3 className="text-[15px] font-semibold text-primary leading-tight mb-0.5 line-clamp-1">
-            {service.name}
-          </h3>
-          <p className="text-[13px] text-secondary mb-1.5">{service.provider}</p>
-
-          {service.verified && (
-            <div className="flex items-center gap-1 mb-1.5">
-              <span className="inline-flex items-center gap-1 bg-success-light text-success text-[11px] font-medium px-2 py-0.5 rounded-full">
-                <CheckCircle weight="fill" size={11} />
-                Verified
-              </span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-1 mb-2">
-            <StarRating rating={service.rating} />
-            <span className="text-[13px] font-medium text-primary">{service.rating.toFixed(1)}</span>
-            <span className="text-[13px] text-secondary">({service.reviews})</span>
+    <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <Link
+      href={`/services/${id}`}
+      onClick={onClick}
+      className="block cursor-pointer"
+    >
+      {/* Image */}
+      <div className="relative aspect-video w-full overflow-hidden">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt={name}
+            className="w-full h-full object-cover rounded-t-xl"
+          />
+        ) : (
+          <div className="w-full h-full bg-brand-light rounded-t-xl flex items-center justify-center">
+            <span className="text-brand-primary text-[13px] font-medium text-center px-2">
+              {categoryName}
+            </span>
           </div>
+        )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-brand-action">
-              From KES {service.price.toLocaleString()}
+        {/* New badge */}
+        {isNew && (
+          <span className="absolute top-2 left-2 bg-brand-warm text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
+            New
+          </span>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-3">
+        {/* Service name */}
+        <p className="text-[15px] font-bold text-primary leading-snug line-clamp-2">
+          {name}
+        </p>
+
+        {/* Provider name */}
+        <p className="text-[13px] text-secondary mt-0.5">{providerName}</p>
+
+        {/* Verified badge */}
+        {verified && (
+          <span className="inline-flex items-center gap-1 mt-1 bg-success-light text-success text-[11px] font-medium px-2 py-0.5 rounded-full">
+            <ShieldCheck size={12} weight="fill" />
+            Verified
+          </span>
+        )}
+
+        {/* Rating row */}
+        {rating !== null && (
+          <div className="mt-1 flex items-center gap-1">
+            <Star size={14} weight="fill" className="text-brand-gold" />
+            <span className="text-[13px] font-medium text-primary">{rating}</span>
+            <span className="text-[13px] text-secondary">
+              ({reviewCount} reviews)
             </span>
-            <span className="flex items-center gap-0.5 text-[12px] text-secondary">
-              <MapPin size={11} weight="fill" />
-              {service.location}
-            </span>
+          </div>
+        )}
+
+        {/* Price + Location row */}
+        <div className="mt-1 flex items-center justify-between gap-1">
+          <span className="text-[13px] font-medium text-brand-primary">
+            {pricingType === 'fixed'
+              ? `From KES ${price.toLocaleString()}`
+              : `KES ${price.toLocaleString()}/hr`}
+          </span>
+          <div className="flex items-center gap-1 min-w-0">
+            <MapPin size={12} className="text-secondary flex-shrink-0" />
+            <span className="text-[12px] text-secondary truncate">{location}</span>
           </div>
         </div>
       </div>
     </Link>
+
+    {/* Book button — only rendered when onBook handler is provided */}
+    {onBook && (
+      <div className="px-3 pb-3 -mt-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onBook() }}
+          className="w-full h-8 rounded-lg bg-brand-action text-white text-[12px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+        >
+          Book
+        </button>
+      </div>
+    )}
+    </div>
   )
 }

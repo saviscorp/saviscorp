@@ -9,7 +9,13 @@ export interface UserDoc {
   uid: string
   email: string
   onboardingComplete: boolean
+  profileComplete: boolean
   onboardingStep: OnboardingStep
+  activeRole: 'customer' | 'provider'
+  verificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected' | 'resubmitted'
+  rating: null
+  ratingCount: number
+  ratingSum: number
   profile: {
     fullName: string
     phone: string
@@ -29,7 +35,12 @@ export interface UserDoc {
 }
 
 // Fetches the user doc; creates it with defaults if it doesn't exist yet.
-export async function getOrCreateUserDoc(uid: string, email: string): Promise<UserDoc> {
+// activeRole can be overridden when arriving via provider intent flow.
+export async function getOrCreateUserDoc(
+  uid: string,
+  email: string,
+  activeRole: 'customer' | 'provider' = 'customer'
+): Promise<UserDoc> {
   const ref = doc(db, 'users', uid)
   const snap = await getDoc(ref)
   if (snap.exists()) {
@@ -39,7 +50,13 @@ export async function getOrCreateUserDoc(uid: string, email: string): Promise<Us
     uid,
     email,
     onboardingComplete: false,
+    profileComplete: false,
     onboardingStep: 1,
+    activeRole,
+    verificationStatus: 'not_submitted',
+    rating: null,
+    ratingCount: 0,
+    ratingSum: 0,
     profile: { fullName: '', phone: '', gender: '', dob: '' },
     photo: { uploaded: false, url: '' },
     identity: { docType: '', frontUploaded: false, backUploaded: false, skipped: false },
@@ -80,7 +97,7 @@ export async function updateOnboardingStep(uid: string, step: OnboardingStep): P
 // Marks the user's profile as fully complete.
 export async function completeOnboarding(uid: string): Promise<void> {
   try {
-    await updateDoc(doc(db, 'users', uid), { onboardingComplete: true })
+    await updateDoc(doc(db, 'users', uid), { onboardingComplete: true, profileComplete: true })
   } catch {
     // Best-effort — navigation still proceeds
   }

@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Envelope, ArrowCounterClockwise, ShieldCheck } from 'phosphor-react'
 import Link from 'next/link'
-import { sendEmailVerification } from 'firebase/auth'
+import { sendEmailVerification, type User as FirebaseUser } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { setAuthCookie } from '@/lib/session'
+import { getOrCreateUserDoc } from '@/lib/onboarding'
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams()
@@ -19,9 +21,40 @@ function VerifyEmailInner() {
 
   useEffect(() => {
     if (countdown <= 0) return
-    const timer = setInterval(() => setCountdown(c => c - 1), 1000)
-    return () => clearInterval(timer)
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
   }, [countdown])
+
+  // Called by both the auto-poll and the manual button
+  const handleVerificationSuccess = useCallback(async (user: FirebaseUser) => {
+    setAuthCookie(user.uid)
+    const providerIntent = sessionStorage.getItem('savis_provider_intent')
+    const activeRole: 'customer' | 'provider' = providerIntent ? 'provider' : 'customer'
+    await getOrCreateUserDoc(user.uid, user.email ?? '', activeRole)
+    sessionStorage.removeItem('savis_provider_intent')
+    router.push('/onboarding/profile/step1')
+  }, [router])
+
+  // Auto-detect verification every 3 s — no manual action required
+  useEffect(() => {
+    let handled = false
+    const interval = setInterval(async () => {
+      if (handled) return
+      const user = auth.currentUser
+      if (!user) return
+      try {
+        await user.reload()
+        if (user.emailVerified) {
+          handled = true
+          clearInterval(interval)
+          await handleVerificationSuccess(user)
+        }
+      } catch {
+        // network hiccup — retry next tick
+      }
+    }, 3000)
+    return () => { handled = true; clearInterval(interval) }
+  }, [handleVerificationSuccess])
 
   const handleResend = async () => {
     if (countdown > 0) return
@@ -41,7 +74,7 @@ function VerifyEmailInner() {
     }
     await user.reload()
     if (user.emailVerified) {
-      router.push('/')
+      await handleVerificationSuccess(user)
     } else {
       setVerifyError("Your email isn't verified yet. Please click the link in the email we sent you.")
     }

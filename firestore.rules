@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── users ────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── providers ────────────────────────────────────────────────────────────
+    match /providers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /providers/{uid}/schedule/{doc} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── services ─────────────────────────────────────────────────────────────
+    // Public reads (anyone can browse services); provider writes own services
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.providerId == request.auth.uid;
+    }
+
+    // ── bookings ─────────────────────────────────────────────────────────────
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null
+        && (resource.data.providerId == request.auth.uid
+            || resource.data.customerId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if request.auth != null
+        && (resource.data.providerId == request.auth.uid
+            || resource.data.customerId == request.auth.uid);
+    }
+
+    // ── appConfig ────────────────────────────────────────────────────────────
+    // Read-only for all authenticated users; write restricted to admin
+    match /appConfig/{doc} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

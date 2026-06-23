@@ -129,10 +129,10 @@ export default function RegisterPage() {
     setSubmitting(true)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password)
-      setAuthCookie(user.uid)
-      sendEmailVerification(user).catch(() => {})
-      await getOrCreateUserDoc(user.uid, email)
-      router.push('/onboarding/profile/step1')
+      // Send verification email — awaited so we know it dispatched before navigating
+      await sendEmailVerification(user)
+      // Don't set cookie or create Firestore doc yet — do that after email is verified
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch (err: unknown) {
       const code = (err as { code?: string }).code
       if (code === 'auth/email-already-in-use') {
@@ -151,7 +151,10 @@ export default function RegisterPage() {
     try {
       const result = await signInWithPopup(auth, new GoogleAuthProvider())
       setAuthCookie(result.user.uid)
-      await getOrCreateUserDoc(result.user.uid, result.user.email ?? '')
+      const providerIntent = sessionStorage.getItem('savis_provider_intent')
+      const activeRole = providerIntent ? 'provider' : 'customer'
+      sessionStorage.removeItem('savis_provider_intent')
+      await getOrCreateUserDoc(result.user.uid, result.user.email ?? '', activeRole)
       const path = await getOnboardingRedirect(result.user.uid)
       router.push(path)
     } catch {
